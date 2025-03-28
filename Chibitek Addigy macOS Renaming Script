@@ -1,0 +1,97 @@
+#!/bin/bash
+
+###############################################################################
+# Rename macOS Device in Format: COMPANYCODE-Firstname-Lastname-MODEL-chipset
+#
+# Author: Erick Grau
+# Company: Chibitek
+# Date: March 28, 2025
+#
+# Example: CT-Erick-Grau-MBP-m1
+###############################################################################
+
+# Get Addigy Site Name or default to Chibitek
+fullSiteName="${ADDIGY_SITE_NAME:-Chibitek}"
+cleanSiteName=$(echo "$fullSiteName" | tr -cd '[:alnum:] [:space:]')
+
+# Map site name to UPPERCASE 2-letter company code
+case "$cleanSiteName" in
+  "Chibitek") siteCode="CT" ;;
+  "Hexclad") siteCode="HX" ;;
+  "Intercept Telehealth") siteCode="IC" ;;
+  "Relevate Health") siteCode="RH" ;;
+  "Barbette Media") siteCode="BM" ;;
+  "Anna C Scott HSA") siteCode="AS" ;;
+  *)
+    siteCode=$(echo "$cleanSiteName" | awk '{print toupper(substr($1,1,1) substr($2,1,1))}')
+    siteCode="${siteCode:-XX}"
+    ;;
+esac
+
+# Get the currently logged-in user
+loggedInUser=$(stat -f%Su /dev/console)
+fullName=$(dscl . -read /Users/"$loggedInUser" RealName | tail -1)
+
+# Capitalize function for name parts
+capitalize() {
+  echo "$1" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}'
+}
+
+# Extract and clean first and last names
+firstRaw=$(echo "$fullName" | awk '{print $1}' | tr -cd '[:alnum:]')
+lastRaw=$(echo "$fullName" | awk '{print $NF}' | tr -cd '[:alnum:]')
+
+firstName=$(capitalize "$firstRaw")
+lastName=$(capitalize "$lastRaw")
+
+# Get model identifier from system profiler
+modelIdentifier=$(system_profiler SPHardwareDataType | awk -F": " '/Model Identifier/ {print $2}')
+
+# Map to UPPERCASE model short code
+case "$modelIdentifier" in
+  MacBookPro*) model="MBP" ;;
+  MacBookAir*) model="MBA" ;;
+  MacBook*)    model="MB" ;;
+  iMac*)       model="IMAC" ;;
+  Macmini*)    model="MM" ;;
+  MacPro*)     model="MP" ;;
+  *)           model="MAC" ;;
+esac
+
+# Detect chipset (Intel or Apple Silicon)
+chipInfo=$(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo "Apple Silicon")
+chipset="unknown"
+
+if [[ "$chipInfo" == *"Intel"* ]]; then
+  if [[ "$chipInfo" == *"i3"* ]]; then chipset="i3"
+  elif [[ "$chipInfo" == *"i5"* ]]; then chipset="i5"
+  elif [[ "$chipInfo" == *"i7"* ]]; then chipset="i7"
+  elif [[ "$chipInfo" == *"i9"* ]]; then chipset="i9"
+  else chipset="intel"
+  fi
+elif [[ "$chipInfo" == *"Apple"* ]]; then
+  if [[ "$chipInfo" == *"M1"* ]]; then chipset="m1"
+  elif [[ "$chipInfo" == *"M2"* ]]; then chipset="m2"
+  elif [[ "$chipInfo" == *"M3"* ]]; then chipset="m3"
+  elif [[ "$chipInfo" == *"M4"* ]]; then chipset="m4"
+  elif [[ "$chipInfo" == *"M5"* ]]; then chipset="m5"
+  else chipset="m"
+  fi
+fi
+
+# Final formatted name
+newName="${siteCode}-${firstName}-${lastName}-${model}-${chipset}"
+
+# Set system name
+scutil --set ComputerName "$newName"
+scutil --set HostName "$newName"
+scutil --set LocalHostName "$newName"
+
+echo "✅ Computer successfully renamed to: $newName"
+
+# Restart Addigy agents
+/Library/Addigy/collector
+/Library/Addigy/auditor
+
+# Optional: Watchman Monitoring
+# /Library/MonitoringClient/RunClient -F
