@@ -14,16 +14,18 @@
 fullSiteName="${ADDIGY_SITE_NAME:-Chibitek}"
 cleanSiteName=$(echo "$fullSiteName" | tr -cd '[:alnum:] [:space:]')
 
-# Map site name to UPPERCASE 2-letter company code
+# Map site name to 2-letter UPPERCASE company code
 case "$cleanSiteName" in
   "Chibitek") siteCode="CT" ;;
   "Hexclad") siteCode="HX" ;;
   "Intercept Telehealth") siteCode="IC" ;;
   "Relevate Health") siteCode="RH" ;;
   "Barbette Media") siteCode="BM" ;;
-  "Anna C Scott HSA") siteCode="AS" ;;
+  "Anna C Scott HSA") siteCode="AO" ;;
+  "Skona") siteCode="SK" ;;
   *)
-    siteCode=$(echo "$cleanSiteName" | awk '{print toupper(substr($1,1,1) substr($2,1,1))}')
+    # Fallback: generate 2-letter code from site name
+    siteCode=$(echo "$cleanSiteName" | tr -cd '[:alpha:]' | cut -c1-2 | tr '[:lower:]' '[:upper:]')
     siteCode="${siteCode:-XX}"
     ;;
 esac
@@ -44,18 +46,18 @@ lastRaw=$(echo "$fullName" | awk '{print $NF}' | tr -cd '[:alnum:]')
 firstName=$(capitalize "$firstRaw")
 lastName=$(capitalize "$lastRaw")
 
-# Get model identifier
-modelIdentifier=$(system_profiler SPHardwareDataType | awk -F": " '/Model Identifier/ {print $2}')
+# Get model name from system profiler (e.g., MacBook Air)
+modelName=$(system_profiler SPHardwareDataType | awk -F": " '/Model Name/ {print $2}')
 
 # Map to UPPERCASE model short code
-case "$modelIdentifier" in
-  MacBookPro*) model="MBP" ;;
-  MacBookAir*) model="MBA" ;;
-  MacBook*)    model="MB" ;;
-  iMac*)       model="IMAC" ;;
-  Macmini*)    model="MM" ;;
-  MacPro*)     model="MP" ;;
-  *)           model="MAC" ;;
+case "$modelName" in
+  "MacBook Pro")    model="MBP" ;;
+  "MacBook Air")    model="MBA" ;;
+  "MacBook")        model="MB" ;;
+  "iMac")           model="IMAC" ;;
+  "Mac mini")       model="MM" ;;
+  "Mac Pro")        model="MP" ;;
+  *)                model="MAC" ;;
 esac
 
 # Detect chipset
