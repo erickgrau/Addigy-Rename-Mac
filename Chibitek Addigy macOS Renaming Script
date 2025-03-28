@@ -21,7 +21,7 @@ case "$cleanSiteName" in
   "Intercept Telehealth") siteCode="IC" ;;
   "Relevate Health") siteCode="RH" ;;
   "Barbette Media") siteCode="BM" ;;
-  "Anna C Scott HSA") siteCode="AO" ;;
+  "AOSD") siteCode="AO" ;;
   "Skona") siteCode="SK" ;;
   *)
     # Fallback: generate 2-letter code from site name
