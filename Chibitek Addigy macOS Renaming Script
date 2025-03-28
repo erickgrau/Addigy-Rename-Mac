@@ -1,13 +1,13 @@
 #!/bin/bash
 
 ###############################################################################
-# Rename macOS Device in Format: COMPANYCODE-Firstname-Lastname-MODEL-chipset
+# Rename macOS Device in Format: COMPANYCODE - Firstname Lastname MODEL chipset
 #
 # Author: Erick Grau
 # Company: Chibitek
 # Date: March 28, 2025
 #
-# Example: CT-Erick-Grau-MBP-m1
+# Example: CT - Erick Grau MBP m1
 ###############################################################################
 
 # Get Addigy Site Name or default to Chibitek
@@ -44,7 +44,7 @@ lastRaw=$(echo "$fullName" | awk '{print $NF}' | tr -cd '[:alnum:]')
 firstName=$(capitalize "$firstRaw")
 lastName=$(capitalize "$lastRaw")
 
-# Get model identifier from system profiler
+# Get model identifier
 modelIdentifier=$(system_profiler SPHardwareDataType | awk -F": " '/Model Identifier/ {print $2}')
 
 # Map to UPPERCASE model short code
@@ -58,7 +58,7 @@ case "$modelIdentifier" in
   *)           model="MAC" ;;
 esac
 
-# Detect chipset (Intel or Apple Silicon)
+# Detect chipset
 chipInfo=$(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo "Apple Silicon")
 chipset="unknown"
 
@@ -79,10 +79,10 @@ elif [[ "$chipInfo" == *"Apple"* ]]; then
   fi
 fi
 
-# Final formatted name
-newName="${siteCode}-${firstName}-${lastName}-${model}-${chipset}"
+# Final formatted name with spaces and no dashes between components
+newName="${siteCode} - ${firstName} ${lastName} ${model} ${chipset}"
 
-# Set system name
+# Apply name to system
 scutil --set ComputerName "$newName"
 scutil --set HostName "$newName"
 scutil --set LocalHostName "$newName"
