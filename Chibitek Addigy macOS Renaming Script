@@ -14,7 +14,6 @@
 fullSiteName="${ADDIGY_SITE_NAME:-Chibitek}"
 cleanSiteName=$(echo "$fullSiteName" | tr -cd '[:alnum:] [:space:]')
 
-
 # Map site name to 2-letter UPPERCASE company code
 case "$cleanSiteName" in
   "Chibitek") siteCode="CT" ;;
@@ -62,7 +61,7 @@ case "$modelName" in
   "iMac")           model="IMAC" ;;
   "Mac mini")       model="MM" ;;
   "Mac Pro")        model="MP" ;;
-  *)                model="MAC" ;;
+  *)                 model="MAC" ;;
 esac
 
 # Detect chipset
@@ -93,8 +92,8 @@ newName="${siteCode} - ${firstName} ${lastName} ${model} ${chipset}"
 scutil --set ComputerName "$newName"
 scutil --set HostName "$newName"
 
-# Sanitize LocalHostName (no spaces or special chars)
-safeLocalHostName=$(echo "$newName" | tr '[:space:]' '-' | tr -cd '[:alnum:]-')
+# Sanitize LocalHostName (ASCII, no spaces/special chars, max 63 chars)
+safeLocalHostName=$(echo "$newName" | iconv -t ascii//TRANSLIT | tr '[:space:]' '-' | tr -cd '[:alnum:]-' | cut -c1-63)
 scutil --set LocalHostName "$safeLocalHostName"
 
 echo "✅ Computer successfully renamed to: $newName"
