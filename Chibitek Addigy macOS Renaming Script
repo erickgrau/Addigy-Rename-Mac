@@ -14,6 +14,7 @@
 fullSiteName="${ADDIGY_SITE_NAME:-Chibitek}"
 cleanSiteName=$(echo "$fullSiteName" | tr -cd '[:alnum:] [:space:]')
 
+
 # Map site name to 2-letter UPPERCASE company code
 case "$cleanSiteName" in
   "Chibitek") siteCode="CT" ;;
@@ -29,6 +30,10 @@ case "$cleanSiteName" in
     siteCode="${siteCode:-XX}"
     ;;
 esac
+
+echo "DEBUG: ADDIGY_SITE_NAME = $ADDIGY_SITE_NAME"
+echo "DEBUG: Resolved fullSiteName = $fullSiteName"
+echo "DEBUG: Final company code = $siteCode"
 
 # Get the currently logged-in user
 loggedInUser=$(stat -f%Su /dev/console)
@@ -84,10 +89,13 @@ fi
 # Final formatted name with spaces and no dashes between components
 newName="${siteCode} - ${firstName} ${lastName} ${model} ${chipset}"
 
-# Apply name to system
+# Set names
 scutil --set ComputerName "$newName"
 scutil --set HostName "$newName"
-scutil --set LocalHostName "$newName"
+
+# Sanitize LocalHostName (no spaces or special chars)
+safeLocalHostName=$(echo "$newName" | tr '[:space:]' '-' | tr -cd '[:alnum:]-')
+scutil --set LocalHostName "$safeLocalHostName"
 
 echo "✅ Computer successfully renamed to: $newName"
 
